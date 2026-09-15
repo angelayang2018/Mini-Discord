@@ -6,8 +6,8 @@ Angela Yang
 2. Connect clients
 python client.py
 
-| Requirement              | Video Timestamp |
-| ------------------------ | --------------- |
+| Requirement               | Video Timestamp |
+| ------------------------- | --------------- |
 | Server startup            |                 |
 | Health endpoint           |                 |
 | User creation             |                 |

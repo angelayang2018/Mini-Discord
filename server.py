@@ -230,8 +230,33 @@ def process_command(line, session):
 # ---------------------------------------------------------------------------
 # TCP server
 # ---------------------------------------------------------------------------
+def cleanup_session(session):
+    """Log out the session's user (if any) and remove them from every
+    channel they were a member of. Called whenever a TCP connection ends --
+    whether the client sent QUIT or simply vanished -- so channel
+    membership never holds onto a disconnected user. Returns the list of
+    channels the user was removed from, for logging.
+    """
+    username = session["username"]
+    if username is None:
+        return []
+
+    left_channels = []
+    with state_lock:
+        for channel, members in channels.items():
+            if username in members:
+                members.discard(username)
+                left_channels.append(channel)
+        session["username"] = None
+
+    return left_channels
+
+
 def handle_tcp_client(client_socket, addr):
     session = {"username": None}
+    quit_requested = False
+    disconnect_reason = None
+
     try:
         # makefile() gives us convenient line-based reading over the socket
         # while still letting us write raw bytes back with sendall().
@@ -254,16 +279,44 @@ def handle_tcp_client(client_socket, addr):
 
                 try:
                     client_socket.sendall((json.dumps(response) + "\n").encode("utf-8"))
-                except OSError:
-                    # Client went away mid-response; stop handling it.
+                except OSError as exc:
+                    # Client went away mid-response -- this is a failed
+                    # client, not a graceful QUIT.
+                    disconnect_reason = f"write failed ({exc})"
                     break
 
                 if should_close:
+                    quit_requested = True
                     break
+            # If the for-loop above ends without break, the client closed
+            # its socket (or the process died / terminal closed) without
+            # ever sending QUIT -- an unexpectedly failed client.
+    except (ConnectionResetError, BrokenPipeError, TimeoutError) as exc:
+        disconnect_reason = str(exc)
+    except OSError as exc:
+        disconnect_reason = str(exc)
     except Exception as exc:
         print(f"[TCP] Error handling client {addr}: {exc}")
+        disconnect_reason = str(exc)
     finally:
-        print(f"[TCP] Connection closed {addr}")
+        username = session["username"]
+        left_channels = cleanup_session(session)
+
+        if quit_requested:
+            detail = f"user '{username}' logged out" if username else "no active session"
+            print(f"[TCP] Connection closed by QUIT {addr} -- {detail}")
+        else:
+            # This is the failure-detection path: the client disconnected
+            # without sending QUIT (closed process, dropped connection,
+            # closed terminal, etc.).
+            detail_parts = []
+            if username:
+                detail_parts.append(f"logged out '{username}'")
+            if left_channels:
+                detail_parts.append(f"removed from channels: {left_channels}")
+            detail = "; ".join(detail_parts) if detail_parts else "no active session"
+            reason = f" ({disconnect_reason})" if disconnect_reason else ""
+            print(f"[TCP] Detected failed/disconnected client {addr}{reason} -- {detail}")
 
 
 def tcp_server(host, port):

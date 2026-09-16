@@ -129,13 +129,13 @@ curl http://127.0.0.1:8080/channels/%23cs249/users
 
 | Requirement               | Video Timestamp |
 | ------------------------- | --------------- |
-| Server startup            |                 |
-| Health endpoint           |                 |
-| User creation             |                 |
-| Channel membership        |                 |
-| Message creation          |                 |
-| Message history           |                 |
-| TCP interface             |                 |
-| Shared TCP and HTTP state |                 |
-| Concurrent clients        |                 |
-| Failure detection         |                 |
+| Server startup            |     0:00        |
+| Health endpoint           |     0:08        |
+| User creation             |     0:15        |
+| Channel membership        |     0:31        |
+| Message creation          |     0:47        |
+| Message history           |     1:00        |
+| TCP interface             |     1:12        |
+| Shared TCP and HTTP state |     1:37        |
+| Concurrent clients        |     2:20        |
+| Failure detection         |     3:08        |

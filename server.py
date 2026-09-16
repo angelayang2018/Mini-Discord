@@ -11,8 +11,8 @@ from urllib.parse import urlsplit, parse_qs, unquote
 # ---------------------------------------------------------------------------
 # Validation
 # ---------------------------------------------------------------------------
-USERNAME_RE = re.compile(r'^[A-Za-z0-9_]{1,32}$')
-CHANNEL_RE = re.compile(r'^#[A-Za-z0-9_]{1,32}$')
+USERNAME_RE = re.compile(r'^[A-Za-z0-9_-]{1,32}$')
+CHANNEL_RE = re.compile(r'^#[A-Za-z0-9_-]{1,32}$')
 
 # ---------------------------------------------------------------------------
 # Shared state (protected by state_lock -- multiple client threads touch this)
